@@ -1,0 +1,1222 @@
+<div id="app">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Noto+Serif+JP:wght@400;700;900&family=M+PLUS+1p:wght@400;700;900&family=M+PLUS+Rounded+1c:wght@400;700;900&family=Kosugi+Maru&family=Zen+Kaku+Gothic+New:wght@400;700;900&family=Zen+Maru+Gothic:wght@400;700;900&family=Shippori+Mincho:wght@400;700;800&family=Zen+Old+Mincho:wght@400;700;900&family=RocknRoll+One&family=Reggae+One&family=DotGothic16&family=Yusei+Magic&family=Kaisei+Decol:wght@400;700&display=swap');
+  :root {
+    --bg: #0a0a0c;
+    --panel: #131318;
+    --panel-2: #1a1a22;
+    --border: #26262e;
+    --text: #e8e8ea;
+    --text-dim: #8a8a92;
+    --accent: #ff5a36;
+    --accent-soft: #ff5a3622;
+    --ok: #4ade80;
+    --warn: #fbbf24;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body, #app { background: var(--bg); color: var(--text); font-family: 'Noto Sans JP', -apple-system, sans-serif; }
+  #app { min-height: 100vh; padding: 20px; }
+
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  .header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding-bottom: 16px; border-bottom: 1px solid var(--border); margin-bottom: 24px;
+  }
+  .title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; letter-spacing: 0.3em; color: var(--text-dim);
+  }
+  .title b { color: var(--accent); font-weight: 700; }
+  .sub { font-size: 11px; color: var(--text-dim); letter-spacing: 0.2em; }
+
+  /* Step indicator */
+  .steps { display: flex; gap: 0; margin-bottom: 24px; }
+  .step {
+    flex: 1; padding: 12px 16px; background: var(--panel);
+    border: 1px solid var(--border); border-right: none;
+    font-size: 11px; letter-spacing: 0.15em; color: var(--text-dim);
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .step:last-child { border-right: 1px solid var(--border); }
+  .step.active { background: var(--accent-soft); color: var(--text); border-color: var(--accent); }
+  .step.done { color: var(--ok); }
+  .step .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; opacity: 0.6;
+  }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--border);
+    padding: 24px; margin-bottom: 16px;
+  }
+  .panel h2 {
+    font-size: 12px; letter-spacing: 0.25em; color: var(--text-dim);
+    margin-bottom: 16px; font-weight: 500;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .panel h2::before {
+    content: ''; width: 4px; height: 4px; background: var(--accent);
+  }
+
+  textarea, input[type="text"], input[type="password"], select {
+    width: 100%; background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); padding: 12px 14px;
+    font-family: inherit; font-size: 14px; outline: none;
+    transition: border-color 0.15s;
+  }
+  textarea:focus, input:focus, select:focus { border-color: var(--accent); }
+  textarea { min-height: 140px; resize: vertical; line-height: 1.6; }
+
+  .row { display: flex; gap: 12px; align-items: center; }
+  .row > * { flex: 1; }
+
+  label {
+    display: block; font-size: 11px; letter-spacing: 0.15em;
+    color: var(--text-dim); margin-bottom: 6px;
+  }
+
+  button {
+    background: var(--accent); color: #fff; border: none;
+    padding: 12px 20px; font-family: inherit; font-size: 13px;
+    letter-spacing: 0.1em; cursor: pointer; transition: all 0.15s;
+    font-weight: 600;
+  }
+  button:hover { background: #ff7456; }
+  button:disabled { background: #444; cursor: not-allowed; opacity: 0.6; }
+  button.ghost {
+    background: transparent; border: 1px solid var(--border); color: var(--text);
+  }
+  button.ghost:hover { border-color: var(--accent); color: var(--accent); }
+  button.small { padding: 6px 12px; font-size: 11px; }
+
+  .file-drop {
+    border: 2px dashed var(--border); padding: 32px; text-align: center;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .file-drop:hover, .file-drop.over { border-color: var(--accent); background: var(--accent-soft); }
+  .file-drop .icon { font-size: 32px; margin-bottom: 8px; }
+  .file-info {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--text-dim); margin-top: 8px;
+  }
+
+  /* Caption editor */
+  .caption-list {
+    max-height: 400px; overflow-y: auto;
+    border: 1px solid var(--border); background: var(--bg);
+  }
+  .caption-row {
+    display: grid; grid-template-columns: 70px 70px 1fr 32px 32px 30px;
+    gap: 8px; padding: 8px 10px;
+    border-bottom: 1px solid var(--border); align-items: start;
+  }
+  .caption-row:last-child { border-bottom: none; }
+  .caption-row input[type="number"] {
+    background: var(--panel-2); border: 1px solid var(--border);
+    color: var(--text); padding: 6px 8px; font-size: 12px;
+    font-family: 'JetBrains Mono', monospace; width: 100%;
+    margin-top: 2px;
+  }
+  .caption-row textarea.cap-text {
+    background: var(--panel-2); border: 1px solid var(--border);
+    color: var(--text); padding: 6px 10px; font-size: 13px;
+    font-family: inherit; width: 100%; resize: vertical;
+    min-height: 32px; line-height: 1.4;
+  }
+  .caption-row textarea.cap-text:focus { outline: none; border-color: var(--accent); }
+  .caption-row .br-btn, .caption-row .pause-btn {
+    background: var(--panel-2); color: var(--text-dim); padding: 6px 0;
+    border: 1px solid var(--border); font-size: 13px; margin-top: 2px;
+    cursor: pointer;
+  }
+  .caption-row .br-btn:hover, .caption-row .pause-btn:hover {
+    color: var(--accent); border-color: var(--accent); background: var(--panel-2);
+  }
+  .caption-row .del {
+    background: transparent; color: var(--text-dim); padding: 4px;
+    border: none; font-size: 14px; margin-top: 4px;
+  }
+  .caption-row .del:hover { color: var(--accent); }
+
+  /* 行間に挿入する「+」 */
+  .caption-insert {
+    position: relative; height: 6px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.15s, height 0.15s;
+  }
+  .caption-insert::before {
+    content: ''; position: absolute; left: 0; right: 0; top: 50%;
+    height: 1px; background: var(--accent);
+  }
+  .caption-insert .plus {
+    position: relative; background: var(--accent); color: #fff;
+    width: 18px; height: 18px; display: flex;
+    align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; z-index: 1;
+  }
+  .caption-list:hover .caption-insert { opacity: 1; height: 18px; }
+  .caption-insert:hover { opacity: 1 !important; height: 18px; }
+
+  /* Preview */
+  .preview-area {
+    background: #000; aspect-ratio: 9/16; max-width: 360px; margin: 0 auto;
+    position: relative; overflow: hidden;
+  }
+  .preview-area video { width: 100%; height: 100%; object-fit: cover; }
+  .preview-caption {
+    position: absolute; bottom: 12%; left: 5%; right: 5%;
+    text-align: center; color: #fff;
+    font-weight: 900; font-size: 22px; line-height: 1.3;
+    text-shadow: 2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000,
+                 0 0 8px rgba(0,0,0,0.8);
+    -webkit-text-stroke: 1px #000;
+  }
+
+  .log {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--text-dim); background: var(--bg);
+    padding: 10px 14px; border: 1px solid var(--border);
+    max-height: 120px; overflow-y: auto; white-space: pre-wrap;
+  }
+  .log .ok { color: var(--ok); }
+  .log .err { color: var(--accent); }
+
+  .progress {
+    height: 4px; background: var(--border); margin: 8px 0; overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%; background: var(--accent); width: 0%;
+    transition: width 0.2s;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 760px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  audio { width: 100%; margin-top: 8px; }
+  .hint { font-size: 11px; color: var(--text-dim); margin-top: 6px; line-height: 1.5; }
+  .hint a { color: var(--accent); }
+
+  .pill {
+    display: inline-block; padding: 2px 8px; font-size: 10px;
+    background: var(--accent-soft); color: var(--accent);
+    letter-spacing: 0.1em; margin-left: 8px;
+  }
+
+  .style-controls {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+  }
+  .style-controls > div { display: flex; flex-direction: column; }
+
+  input[type="color"] { width: 100%; height: 38px; background: var(--bg); border: 1px solid var(--border); cursor: pointer; }
+  input[type="range"] { width: 100%; }
+</style>
+
+<div class="wrap">
+  <div class="header">
+    <div>
+      <div class="title"><b>SHORT</b> / VIDEO COMPOSER</div>
+      <div class="sub" style="margin-top:6px;">TTS + AUTO CAPTION + MP4 EXPORT (9:16)</div>
+    </div>
+    <div class="sub">v1.0</div>
+  </div>
+
+  <div class="steps">
+    <div class="step active" data-step="1"><span class="num">01</span><span>API KEY</span></div>
+    <div class="step" data-step="2"><span class="num">02</span><span>TEXT → AUDIO</span></div>
+    <div class="step" data-step="3"><span class="num">03</span><span>VIDEO</span></div>
+    <div class="step" data-step="4"><span class="num">04</span><span>CAPTIONS</span></div>
+    <div class="step" data-step="5"><span class="num">05</span><span>EXPORT</span></div>
+  </div>
+
+  <!-- STEP 1: API KEY -->
+  <div class="panel">
+    <h2>STEP 01 — GOOGLE AI STUDIO API KEY</h2>
+    <input type="password" id="apiKey" placeholder="AIza..." />
+    <div class="hint">
+      AI Studio (Gemini API)のキーを入力。ブラウザのみで保持・外部送信しません。<br>
+      取得：<a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a>
+    </div>
+  </div>
+
+  <!-- STEP 2: TEXT TO AUDIO -->
+  <div class="panel">
+    <h2>STEP 02 — テキスト → 音声</h2>
+    <label>読み上げテキスト</label>
+    <textarea id="ttsText" placeholder="ここにナレーションを入力。句読点で区切ると自動テロップが綺麗になります。"></textarea>
+
+    <div class="row" style="margin-top:12px;">
+      <div>
+        <label>音声 (Voice)</label>
+        <select id="voiceSelect">
+          <option value="Kore">Kore (中性・落ち着き)</option>
+          <option value="Puck">Puck (明るい男性)</option>
+          <option value="Charon">Charon (深い男性)</option>
+          <option value="Fenrir">Fenrir (力強い男性)</option>
+          <option value="Aoede">Aoede (柔らかい女性)</option>
+          <option value="Leda">Leda (若い女性)</option>
+          <option value="Zephyr">Zephyr (爽やかな女性)</option>
+        </select>
+      </div>
+      <div>
+        <label>話し方の指示 (任意)</label>
+        <input type="text" id="ttsStyle" placeholder="例: 元気に・落ち着いて・ゆっくり" />
+      </div>
+    </div>
+
+    <div style="margin-top:14px; display:flex; gap:10px; align-items:center;">
+      <button id="genAudioBtn">音声を生成</button>
+      <button class="ghost small" id="uploadAudioBtn">代わりにファイルをアップロード</button>
+      <input type="file" id="audioFileInput" accept="audio/*" style="display:none;" />
+    </div>
+    <audio id="audioPlayer" controls style="display:none;"></audio>
+    <div class="file-info" id="audioInfo"></div>
+  </div>
+
+  <!-- STEP 3: VIDEO -->
+  <div class="panel">
+    <h2>STEP 03 — 動画ファイル</h2>
+    <div class="file-drop" id="videoDrop">
+      <div class="icon">▲</div>
+      <div>クリックまたはドラッグ&ドロップで動画をアップロード</div>
+      <div class="hint">MP4 / MOV / WebM など。9:16に自動クロップされます。</div>
+    </div>
+    <input type="file" id="videoFile" accept="video/*" style="display:none;" />
+    <video id="videoPreview" controls style="display:none; width: 100%; max-width: 320px; margin-top: 12px;"></video>
+    <div class="file-info" id="videoInfo"></div>
+
+    <!-- トリミング -->
+    <div id="trimSection" style="display:none; margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+      <label style="margin-bottom:10px;">
+        トリミング (使用範囲) <span style="color:var(--text-dim); font-weight:normal;">— 指定範囲がそのまま出力動画の長さになります</span>
+      </label>
+      <div style="display:grid; grid-template-columns: 1fr 1fr auto auto; gap:10px; align-items:end;">
+        <div>
+          <label>開始 (秒)</label>
+          <input type="number" id="trimStart" value="0" min="0" step="0.1" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px 10px;width:100%;font-family:'JetBrains Mono',monospace;" />
+        </div>
+        <div>
+          <label>終了 (秒)</label>
+          <input type="number" id="trimEnd" value="0" min="0" step="0.1" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px 10px;width:100%;font-family:'JetBrains Mono',monospace;" />
+        </div>
+        <button class="ghost small" id="setStartHere" title="プレビューの現在位置を開始秒に">⏮ 現在</button>
+        <button class="ghost small" id="setEndHere" title="プレビューの現在位置を終了秒に">現在 ⏭</button>
+      </div>
+      <div class="hint" id="trimInfo" style="margin-top:8px;">
+        プレビュー動画を一時停止して「現在」ボタンで、その位置を開始/終了秒に反映できます。
+      </div>
+      <button class="ghost small" id="trimReset" style="margin-top:8px;">範囲をリセット (全体を使う)</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: CAPTIONS -->
+  <div class="panel">
+    <h2>STEP 04 — テロップ編集 <span class="pill" id="captionCount">0 件</span></h2>
+
+    <div class="row" style="margin-bottom:12px; flex-wrap: wrap;">
+      <button class="ghost small" id="autoSplitBtn">テキストから自動生成</button>
+      <button class="ghost small" id="addCaptionBtn">+ 行を追加</button>
+      <div style="flex:0 0 auto;">
+        <label style="display:inline-block; margin:0 8px 0 0;">1行最大文字数</label>
+        <input type="number" id="maxChars" value="14" min="6" max="30" style="width:60px;display:inline-block;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 8px;font-family:'JetBrains Mono',monospace;" />
+      </div>
+      <div style="flex:0 0 auto;">
+        <label style="display:inline-block; margin:0 8px 0 0;">テロップ間の空白(秒)</label>
+        <input type="number" id="gapSec" value="0" min="0" max="2" step="0.1" style="width:70px;display:inline-block;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 8px;font-family:'JetBrains Mono',monospace;" />
+      </div>
+    </div>
+
+    <div class="caption-list" id="captionList"></div>
+    <div class="hint" style="margin-top:8px;">
+      ・行と行の間にマウスを乗せると「+」が出て、任意の位置に行を挿入できます<br>
+      ・⏸ ボタンでその行の末尾0.3秒を空白に切り出す「一拍」を挿入できます<br>
+      ・テキスト欄を空のまま秒数を指定すると、その時間は無音の隙間になります<br>
+      ・改行は Enter または ⏎ ボタンで（指定した位置だけで改行されます）
+    </div>
+
+    <div style="margin-top:16px;">
+      <label style="margin-bottom:10px;">テロップスタイル</label>
+      <div class="style-controls">
+        <div>
+          <label>フォント</label>
+          <select id="capFont" style="height:38px;">
+            <optgroup label="ゴシック系">
+              <option value="'Noto Sans JP', sans-serif" data-weight-range="900">Noto Sans JP</option>
+              <option value="'M PLUS 1p', sans-serif" data-weight-range="900">M PLUS 1p</option>
+              <option value="'M PLUS Rounded 1c', sans-serif" data-weight-range="900">M PLUS Rounded 1c (丸ゴ)</option>
+              <option value="'Kosugi Maru', sans-serif" data-weight-range="400">小杉丸 (丸ゴ)</option>
+              <option value="'Zen Kaku Gothic New', sans-serif" data-weight-range="900">Zen 角ゴシック</option>
+              <option value="'Zen Maru Gothic', sans-serif" data-weight-range="900">Zen 丸ゴシック</option>
+            </optgroup>
+            <optgroup label="明朝系">
+              <option value="'Noto Serif JP', serif" data-weight-range="900">Noto Serif JP</option>
+              <option value="'Shippori Mincho', serif" data-weight-range="800">しっぽり明朝</option>
+              <option value="'Zen Old Mincho', serif" data-weight-range="900">Zen Old 明朝</option>
+            </optgroup>
+            <optgroup label="装飾・特殊">
+              <option value="'RocknRoll One', sans-serif" data-weight-range="400">RocknRoll One (太め)</option>
+              <option value="'Reggae One', sans-serif" data-weight-range="400">Reggae One (インパクト)</option>
+              <option value="'DotGothic16', sans-serif" data-weight-range="400">ドットゴシック</option>
+              <option value="'Yusei Magic', sans-serif" data-weight-range="400">遊星マジック (手書き風)</option>
+              <option value="'Kaisei Decol', serif" data-weight-range="700">解星デコール</option>
+            </optgroup>
+          </select>
+        </div>
+        <div>
+          <label>文字色</label>
+          <input type="color" id="capColor" value="#ffffff" />
+        </div>
+        <div>
+          <label>サイズ (px)</label>
+          <input type="number" id="capSize" value="60" min="20" max="120" style="height:38px;" />
+        </div>
+        <div>
+          <label>縁取り</label>
+          <select id="capStrokeOn" style="height:38px;">
+            <option value="on" selected>しっかり</option>
+            <option value="light">薄め</option>
+            <option value="off">なし</option>
+          </select>
+        </div>
+        <div>
+          <label>下からの位置 (%)</label>
+          <input type="number" id="capBottom" value="20" min="5" max="80" style="height:38px;" />
+        </div>
+        <div>
+          <label>太さ</label>
+          <select id="capWeight" style="height:38px;">
+            <option value="400">標準</option>
+            <option value="700">太字</option>
+            <option value="900" selected>極太</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 5: EXPORT -->
+  <div class="panel">
+    <h2>STEP 05 — プレビュー & 書き出し</h2>
+    <div class="grid-2">
+      <div>
+        <label>プレビュー</label>
+        <div class="preview-area" id="previewArea">
+          <video id="previewVideo" muted></video>
+          <audio id="previewAudio"></audio>
+          <div class="preview-caption" id="previewCaption"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;justify-content:center;">
+          <button class="ghost small" id="playPreviewBtn">▶ 再生</button>
+          <button class="ghost small" id="stopPreviewBtn">■ 停止</button>
+        </div>
+      </div>
+      <div>
+        <label>書き出し</label>
+        <button id="exportBtn" style="width:100%;padding:16px;">MP4を書き出す</button>
+        <div class="progress" style="margin-top:12px;"><div class="progress-bar" id="exportProgress"></div></div>
+        <div class="log" id="exportLog" style="margin-top:10px;">準備完了。各ステップを埋めてから「書き出す」を押してください。</div>
+        <a id="downloadLink" style="display:none;margin-top:10px;"><button style="width:100%;">▼ ダウンロード</button></a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+// ===== State =====
+const state = {
+  apiKey: '',
+  audioBlob: null,
+  audioDuration: 0,
+  audioUrl: null,
+  videoFile: null,
+  videoUrl: null,
+  videoDuration: 0,
+  trimStart: 0,
+  trimEnd: 0,
+  captions: [], // {start, end, text}
+};
+
+// ===== Utilities =====
+const $ = (id) => document.getElementById(id);
+const log = (msg, cls = '') => {
+  const el = $('exportLog');
+  const time = new Date().toLocaleTimeString();
+  el.innerHTML += `\n<span class="${cls}">[${time}] ${msg}</span>`;
+  el.scrollTop = el.scrollHeight;
+};
+
+const setStep = (n) => {
+  document.querySelectorAll('.step').forEach((el) => {
+    const s = parseInt(el.dataset.step);
+    el.classList.toggle('active', s === n);
+    el.classList.toggle('done', s < n);
+  });
+};
+
+// ===== API Key =====
+$('apiKey').addEventListener('input', (e) => {
+  state.apiKey = e.target.value.trim();
+  if (state.apiKey) setStep(2);
+});
+
+// ===== TTS: Gemini API =====
+// Gemini 2.5 Flash Preview TTS の REST 呼び出し
+async function generateTTS(text, voice, styleHint) {
+  const prompt = styleHint ? `${styleHint}という雰囲気で読んでください: ${text}` : text;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${state.apiKey}`;
+  const body = {
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: {
+      responseModalities: ['AUDIO'],
+      speechConfig: {
+        voiceConfig: {
+          prebuiltVoiceConfig: { voiceName: voice }
+        }
+      }
+    }
+  };
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`TTS API error ${res.status}: ${err}`);
+  }
+  const data = await res.json();
+  const audioPart = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+  if (!audioPart) throw new Error('音声データが返却されませんでした');
+
+  // Gemini TTSはPCM(L16, 24kHz)を返す → WAVヘッダ付与
+  const pcmData = base64ToUint8Array(audioPart.data);
+  const wavBlob = pcmToWav(pcmData, 24000, 1, 16);
+  return wavBlob;
+}
+
+function base64ToUint8Array(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+function pcmToWav(pcm, sampleRate, channels, bitsPerSample) {
+  const blockAlign = channels * bitsPerSample / 8;
+  const byteRate = sampleRate * blockAlign;
+  const dataSize = pcm.length;
+  const buffer = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(buffer);
+  // RIFF
+  writeStr(view, 0, 'RIFF');
+  view.setUint32(4, 36 + dataSize, true);
+  writeStr(view, 8, 'WAVE');
+  // fmt
+  writeStr(view, 12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, channels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, byteRate, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, bitsPerSample, true);
+  // data
+  writeStr(view, 36, 'data');
+  view.setUint32(40, dataSize, true);
+  new Uint8Array(buffer, 44).set(pcm);
+  return new Blob([buffer], { type: 'audio/wav' });
+}
+function writeStr(view, offset, str) {
+  for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+}
+
+async function getAudioDuration(blob) {
+  return new Promise((resolve, reject) => {
+    const audio = new Audio();
+    audio.src = URL.createObjectURL(blob);
+    audio.onloadedmetadata = () => resolve(audio.duration);
+    audio.onerror = reject;
+  });
+}
+
+$('genAudioBtn').addEventListener('click', async () => {
+  const text = $('ttsText').value.trim();
+  if (!text) return alert('テキストを入力してください');
+  if (!state.apiKey) return alert('APIキーを入力してください');
+
+  const btn = $('genAudioBtn');
+  btn.disabled = true; btn.textContent = '生成中...';
+  try {
+    const voice = $('voiceSelect').value;
+    const styleHint = $('ttsStyle').value.trim();
+    const blob = await generateTTS(text, voice, styleHint);
+    state.audioBlob = blob;
+    state.audioUrl = URL.createObjectURL(blob);
+    state.audioDuration = await getAudioDuration(blob);
+
+    const player = $('audioPlayer');
+    player.src = state.audioUrl;
+    player.style.display = 'block';
+    $('previewAudio').src = state.audioUrl;
+    $('audioInfo').textContent = `生成完了: ${state.audioDuration.toFixed(2)}秒 / ${(blob.size/1024).toFixed(1)}KB`;
+    setStep(3);
+    autoSplitCaptions();
+  } catch (e) {
+    alert('エラー: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '音声を生成';
+  }
+});
+
+$('uploadAudioBtn').addEventListener('click', () => $('audioFileInput').click());
+$('audioFileInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  state.audioBlob = file;
+  state.audioUrl = URL.createObjectURL(file);
+  state.audioDuration = await getAudioDuration(file);
+  const player = $('audioPlayer');
+  player.src = state.audioUrl; player.style.display = 'block';
+  $('previewAudio').src = state.audioUrl;
+  $('audioInfo').textContent = `読込: ${file.name} (${state.audioDuration.toFixed(2)}秒)`;
+  setStep(3);
+  autoSplitCaptions();
+});
+
+// ===== Video upload =====
+const videoDrop = $('videoDrop');
+videoDrop.addEventListener('click', () => $('videoFile').click());
+['dragover', 'dragleave', 'drop'].forEach(ev => {
+  videoDrop.addEventListener(ev, (e) => {
+    e.preventDefault();
+    videoDrop.classList.toggle('over', ev === 'dragover');
+    if (ev === 'drop') {
+      const file = e.dataTransfer.files[0];
+      if (file) loadVideo(file);
+    }
+  });
+});
+$('videoFile').addEventListener('change', (e) => {
+  if (e.target.files[0]) loadVideo(e.target.files[0]);
+});
+function loadVideo(file) {
+  state.videoFile = file;
+  state.videoUrl = URL.createObjectURL(file);
+  const v = $('videoPreview');
+  v.src = state.videoUrl; v.style.display = 'block';
+  v.onloadedmetadata = () => {
+    // 動画長が Infinity になることがあるので、その場合はseekして強制取得
+    if (!isFinite(v.duration) || v.duration === 0) {
+      v.currentTime = 1e10;
+      v.ontimeupdate = () => {
+        v.ontimeupdate = null;
+        v.currentTime = 0;
+        finalizeLoadVideo(file, v);
+      };
+    } else {
+      finalizeLoadVideo(file, v);
+    }
+  };
+}
+
+function finalizeLoadVideo(file, v) {
+  state.videoDuration = v.duration;
+  // トリミング初期値: 全体を使う
+  state.trimStart = 0;
+  state.trimEnd = v.duration;
+  $('trimSection').style.display = 'block';
+  $('trimStart').value = '0';
+  $('trimStart').max = v.duration.toFixed(2);
+  $('trimEnd').value = v.duration.toFixed(2);
+  $('trimEnd').max = v.duration.toFixed(2);
+  updateTrimInfo();
+
+  $('videoInfo').textContent = `${file.name} / ${v.videoWidth}x${v.videoHeight} / ${v.duration.toFixed(2)}秒`;
+  $('previewVideo').src = state.videoUrl;
+  setStep(4);
+}
+
+function updateTrimInfo() {
+  let s = parseFloat($('trimStart').value);
+  let e = parseFloat($('trimEnd').value);
+  if (!isFinite(s) || s < 0) s = 0;
+  if (!isFinite(e) || e <= 0) e = state.videoDuration;
+  if (e > state.videoDuration) e = state.videoDuration;
+  if (s >= e) s = Math.max(0, e - 0.1);
+  state.trimStart = s;
+  state.trimEnd = e;
+  const dur = Math.max(0, e - s);
+  $('trimInfo').textContent = `使用範囲: ${s.toFixed(2)}秒 〜 ${e.toFixed(2)}秒 / 出力動画の長さ: ${dur.toFixed(2)}秒`;
+}
+
+document.addEventListener('input', (e) => {
+  if (e.target.id === 'trimStart' || e.target.id === 'trimEnd') updateTrimInfo();
+});
+
+document.addEventListener('click', (e) => {
+  if (e.target.id === 'setStartHere') {
+    const t = $('videoPreview').currentTime;
+    $('trimStart').value = t.toFixed(2);
+    updateTrimInfo();
+  } else if (e.target.id === 'setEndHere') {
+    const t = $('videoPreview').currentTime;
+    $('trimEnd').value = t.toFixed(2);
+    updateTrimInfo();
+  } else if (e.target.id === 'trimReset') {
+    $('trimStart').value = '0';
+    $('trimEnd').value = state.videoDuration.toFixed(2);
+    updateTrimInfo();
+  }
+});
+
+// ===== Caption auto-split =====
+function autoSplitCaptions() {
+  const text = $('ttsText').value.trim();
+  if (!text || !state.audioDuration) return;
+  const maxChars = parseInt($('maxChars').value) || 14;
+  const gap = Math.max(0, parseFloat($('gapSec').value) || 0);
+
+  // 句読点で分割し、長すぎたら更に分割
+  const splitRegex = /([、。!?！？\n])/;
+  const rawSegs = text.split(splitRegex).reduce((acc, cur) => {
+    if (splitRegex.test(cur)) {
+      if (acc.length > 0) acc[acc.length - 1] += cur === '\n' ? '' : cur;
+    } else if (cur.trim()) {
+      acc.push(cur.trim());
+    }
+    return acc;
+  }, []);
+
+  // さらに長すぎるものを分割
+  const segs = [];
+  rawSegs.forEach(s => {
+    if (s.length <= maxChars) {
+      segs.push(s);
+    } else {
+      // 単純に文字数で割る
+      for (let i = 0; i < s.length; i += maxChars) {
+        segs.push(s.slice(i, i + maxChars));
+      }
+    }
+  });
+
+  // 全体尺から gap × (segs.length - 1) を引いた残りを文字数比で配分
+  const totalChars = segs.reduce((sum, s) => sum + s.length, 0);
+  const totalGap = gap * Math.max(0, segs.length - 1);
+  const speakable = Math.max(0.1, state.audioDuration - totalGap);
+
+  let cursor = 0;
+  state.captions = segs.map((s, i) => {
+    const dur = (s.length / totalChars) * speakable;
+    const cap = { start: cursor, end: cursor + dur, text: s };
+    // 次の行までの隙間
+    cursor += dur + (i < segs.length - 1 ? gap : 0);
+    return cap;
+  });
+  renderCaptions();
+  setStep(5);
+}
+
+function renderCaptions() {
+  const list = $('captionList');
+  list.innerHTML = '';
+
+  // 先頭への挿入ボタン
+  list.appendChild(makeInsertBar(0));
+
+  state.captions.forEach((c, idx) => {
+    const row = document.createElement('div');
+    row.className = 'caption-row';
+    // テキストはエスケープ。改行はそのままtextareaの値として保持
+    const escapedText = c.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    row.innerHTML = `
+      <input type="number" step="0.1" value="${c.start.toFixed(2)}" data-field="start" data-idx="${idx}" />
+      <input type="number" step="0.1" value="${c.end.toFixed(2)}" data-field="end" data-idx="${idx}" />
+      <textarea class="cap-text" rows="1" data-field="text" data-idx="${idx}" title="Enterで改行・空欄なら無音テロップ">${escapedText}</textarea>
+      <button class="br-btn" data-idx="${idx}" title="カーソル位置に改行を挿入">⏎</button>
+      <button class="pause-btn" data-idx="${idx}" title="この行の直後に一拍 (0.3秒の空白) を挿入">⏸</button>
+      <button class="del" data-idx="${idx}" title="この行を削除">×</button>
+    `;
+    list.appendChild(row);
+    // textareaを内容に合わせて自動リサイズ
+    const ta = row.querySelector('textarea.cap-text');
+    autoResizeTextarea(ta);
+
+    // この行の後ろに挿入ボタン
+    list.appendChild(makeInsertBar(idx + 1));
+  });
+  $('captionCount').textContent = `${state.captions.length} 件`;
+}
+
+function makeInsertBar(insertAt) {
+  const bar = document.createElement('div');
+  bar.className = 'caption-insert';
+  bar.dataset.insertAt = insertAt;
+  bar.title = 'ここに行を挿入';
+  bar.innerHTML = '<span class="plus">+</span>';
+  return bar;
+}
+
+function autoResizeTextarea(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = (ta.scrollHeight) + 'px';
+}
+
+$('captionList').addEventListener('input', (e) => {
+  const t = e.target;
+  if (!t.dataset.idx) return;
+  const idx = parseInt(t.dataset.idx);
+  const field = t.dataset.field;
+  if (field === 'text') {
+    state.captions[idx][field] = t.value;
+    autoResizeTextarea(t);
+  } else {
+    state.captions[idx][field] = parseFloat(t.value) || 0;
+  }
+});
+$('captionList').addEventListener('click', (e) => {
+  // 挿入ボタン (caption-insert 自身や中の span をクリック)
+  const insertEl = e.target.closest('.caption-insert');
+  if (insertEl) {
+    const insertAt = parseInt(insertEl.dataset.insertAt);
+    const prev = state.captions[insertAt - 1];
+    const next = state.captions[insertAt];
+    // 前後の時刻から自然な範囲を推定
+    let start, end;
+    if (prev && next) {
+      // 前後の間に挿入: 間に時間がある場合はそこを埋める、なければ均等分割
+      if (next.start > prev.end) {
+        start = prev.end;
+        end = next.start;
+      } else {
+        const mid = (prev.end + next.start) / 2;
+        start = mid;
+        end = mid + 0.5;
+      }
+    } else if (prev) {
+      start = prev.end;
+      end = start + 1;
+    } else if (next) {
+      start = Math.max(0, next.start - 1);
+      end = next.start;
+    } else {
+      start = 0; end = 1;
+    }
+    state.captions.splice(insertAt, 0, { start, end, text: '' });
+    renderCaptions();
+    // 挿入した行のテキスト欄にフォーカス
+    const rows = $('captionList').querySelectorAll('.caption-row');
+    const target = rows[insertAt]?.querySelector('textarea.cap-text');
+    if (target) target.focus();
+    return;
+  }
+  if (e.target.classList.contains('del')) {
+    const idx = parseInt(e.target.dataset.idx);
+    state.captions.splice(idx, 1);
+    renderCaptions();
+  } else if (e.target.classList.contains('pause-btn')) {
+    // 一拍 = 現在行の末尾0.3秒を切り取って空白行に
+    const idx = parseInt(e.target.dataset.idx);
+    const cur = state.captions[idx];
+    const pauseDur = 0.3;
+    if (cur.end - cur.start <= pauseDur + 0.05) {
+      alert('この行が短すぎて一拍を挿入できません。先に表示時間を延ばしてください。');
+      return;
+    }
+    const newEnd = cur.end - pauseDur;
+    const pauseStart = newEnd;
+    const pauseEnd = cur.end;
+    cur.end = newEnd;
+    state.captions.splice(idx + 1, 0, { start: pauseStart, end: pauseEnd, text: '' });
+    renderCaptions();
+  } else if (e.target.classList.contains('br-btn')) {
+    const idx = parseInt(e.target.dataset.idx);
+    const row = e.target.closest('.caption-row');
+    const ta = row.querySelector('textarea.cap-text');
+    // カーソル位置に改行を挿入
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const before = ta.value.slice(0, start);
+    const after = ta.value.slice(end);
+    const newVal = before + '\n' + after;
+    ta.value = newVal;
+    state.captions[idx].text = newVal;
+    ta.focus();
+    ta.selectionStart = ta.selectionEnd = start + 1;
+    autoResizeTextarea(ta);
+  }
+});
+$('autoSplitBtn').addEventListener('click', autoSplitCaptions);
+$('addCaptionBtn').addEventListener('click', () => {
+  const last = state.captions[state.captions.length - 1];
+  const start = last ? last.end : 0;
+  state.captions.push({ start, end: start + 1, text: '' });
+  renderCaptions();
+});
+$('maxChars').addEventListener('change', autoSplitCaptions);
+$('gapSec').addEventListener('change', autoSplitCaptions);
+
+// ===== Preview =====
+let previewTimer = null;
+// 動画終了で全体停止 (音声基準ではなく動画基準に)
+if ($('previewVideo')) {
+  $('previewVideo').addEventListener('ended', () => {
+    const a = $('previewAudio');
+    if (a && !a.paused) a.pause();
+    if (previewTimer) clearInterval(previewTimer);
+    $('previewCaption').innerHTML = '';
+  });
+}
+$('playPreviewBtn').addEventListener('click', async () => {
+  const v = $('previewVideo');
+  const a = $('previewAudio');
+  v.muted = true;
+  // トリミング範囲があれば、その開始位置から再生
+  const startAt = state.trimStart || 0;
+  v.currentTime = startAt;
+  if (a.src) {
+    a.currentTime = 0;
+    a.volume = 1;
+    try { await Promise.all([v.play(), a.play()]); }
+    catch (e) { console.warn('再生エラー', e); }
+  } else {
+    v.play();
+  }
+  if (previewTimer) clearInterval(previewTimer);
+  previewTimer = setInterval(updatePreviewCaption, 80);
+});
+$('stopPreviewBtn').addEventListener('click', () => {
+  const v = $('previewVideo');
+  const a = $('previewAudio');
+  v.pause(); v.currentTime = state.trimStart || 0;
+  if (a.src) { a.pause(); a.currentTime = 0; }
+  $('previewCaption').innerHTML = '';
+  if (previewTimer) clearInterval(previewTimer);
+});
+function updatePreviewCaption() {
+  const v = $('previewVideo');
+  const a = $('previewAudio');
+  // テロップの時刻基準は「動画の経過時間 (トリミング開始からの相対時間)」
+  // = 音声の再生時刻と同じ意味になるので、音声があれば音声時刻、なければ動画相対時刻
+  const t = (a && a.src && !a.ended) ? a.currentTime : (v.currentTime - (state.trimStart || 0));
+  // トリミング終了を超えたら停止
+  const trimEnd = state.trimEnd || state.videoDuration;
+  if (trimEnd && v.currentTime >= trimEnd) {
+    v.pause();
+    if (a && !a.paused) a.pause();
+    if (previewTimer) clearInterval(previewTimer);
+    $('previewCaption').innerHTML = '';
+    return;
+  }
+  const cur = state.captions.find(c => t >= c.start && t <= c.end);
+  const cap = $('previewCaption');
+  if (cur) {
+    // 改行を<br>に変換して表示
+    const safe = cur.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    cap.innerHTML = safe.replace(/\n/g, '<br>');
+  } else {
+    cap.innerHTML = '';
+  }
+  // スタイル反映
+  cap.style.color = $('capColor').value;
+  cap.style.fontWeight = $('capWeight').value;
+  cap.style.fontFamily = $('capFont').value;
+  cap.style.bottom = $('capBottom').value + '%';
+  // フォントサイズはプレビュー縮小サイズに合わせて圧縮
+  const sc = $('capSize').value / 60 * 22;
+  cap.style.fontSize = sc + 'px';
+  const strokeMode = $('capStrokeOn').value;
+  // しっかり=6px相当, 薄め=2px相当, なし=0
+  const strokePresetW = strokeMode === 'on' ? 6 : strokeMode === 'light' ? 2 : 0;
+  const sw = strokePresetW / 6 * 2; // プレビュー縮小比
+  const strokeColor = '#000000';
+  cap.style.textShadow = sw > 0
+    ? `${sw}px ${sw}px 0 ${strokeColor}, -${sw}px ${sw}px 0 ${strokeColor}, ${sw}px -${sw}px 0 ${strokeColor}, -${sw}px -${sw}px 0 ${strokeColor}`
+    : 'none';
+}
+
+// ===== Export with MediaRecorder (no ffmpeg needed!) =====
+// Canvas + WebAudio + MediaRecorder で完結
+
+// 最適な録画形式を選択 (MP4が使えるならMP4、ダメならWebM)
+function pickRecorderMime() {
+  const candidates = [
+    { mime: 'video/mp4;codecs=avc1.42E01E,mp4a.40.2', ext: 'mp4' },
+    { mime: 'video/mp4;codecs=avc1', ext: 'mp4' },
+    { mime: 'video/mp4', ext: 'mp4' },
+    { mime: 'video/webm;codecs=vp9,opus', ext: 'webm' },
+    { mime: 'video/webm;codecs=vp8,opus', ext: 'webm' },
+    { mime: 'video/webm', ext: 'webm' },
+  ];
+  for (const c of candidates) {
+    if (MediaRecorder.isTypeSupported(c.mime)) {
+      return c;
+    }
+  }
+  return { mime: '', ext: 'webm' };
+}
+
+// 動画ファイルから完全に読み込み済みの <video> 要素を作る
+async function makeVideoElement(file) {
+  return new Promise((resolve, reject) => {
+    const v = document.createElement('video');
+    v.src = URL.createObjectURL(file);
+    v.muted = true; // 元動画の音声は使わない
+    v.playsInline = true;
+    v.crossOrigin = 'anonymous';
+    v.onloadedmetadata = () => {
+      // 一度シークしてサイズが取れる状態に
+      v.currentTime = 0;
+      v.onseeked = () => resolve(v);
+    };
+    v.onerror = () => reject(new Error('動画読み込みエラー'));
+  });
+}
+
+// 音声ファイルから AudioBuffer を取り出す
+async function decodeAudio(blob) {
+  const arrBuf = await blob.arrayBuffer();
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  return await ctx.decodeAudioData(arrBuf);
+}
+
+// テロップを Canvas に描画
+function drawCaption(ctx, W, H, text, style) {
+  if (!text) return;
+  const lines = text.split('\n');
+  const fontFamily = style.font;
+  const fontSize = style.size;
+  const weight = style.weight;
+  const lineHeight = fontSize * 1.3;
+  const totalH = lineHeight * lines.length;
+  const bottom = style.bottom; // 0-1
+  const startY = H * (1 - bottom) - totalH / 2 + fontSize;
+
+  ctx.font = `${weight} ${fontSize}px ${fontFamily}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+
+  const x = W / 2;
+  lines.forEach((line, i) => {
+    const y = startY + i * lineHeight;
+    // 縁取り
+    if (style.strokeW > 0) {
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = style.strokeW * 2;
+      ctx.lineJoin = 'round';
+      ctx.miterLimit = 2;
+      ctx.strokeText(line, x, y);
+    }
+    // 本体
+    ctx.fillStyle = style.color;
+    ctx.fillText(line, x, y);
+  });
+}
+
+// 9:16 にクロップして描画する座標計算
+function computeCropDraw(srcW, srcH, dstW, dstH) {
+  const srcAspect = srcW / srcH;
+  const dstAspect = dstW / dstH;
+  let sx, sy, sw, sh;
+  if (srcAspect > dstAspect) {
+    // 元の方が横長 → 横を切る
+    sh = srcH;
+    sw = srcH * dstAspect;
+    sx = (srcW - sw) / 2;
+    sy = 0;
+  } else {
+    // 元の方が縦長 (または同じ) → 縦を切る
+    sw = srcW;
+    sh = srcW / dstAspect;
+    sx = 0;
+    sy = (srcH - sh) / 2;
+  }
+  return { sx, sy, sw, sh };
+}
+
+$('exportBtn').addEventListener('click', async () => {
+  if (!state.videoFile) return alert('動画をアップロードしてください');
+  if (!state.audioBlob) return alert('音声を生成またはアップロードしてください');
+
+  const btn = $('exportBtn');
+  btn.disabled = true;
+  btn.textContent = '処理中...';
+  $('exportProgress').style.width = '0%';
+  $('exportLog').innerHTML = '';
+
+  try {
+    // 出力形式
+    const recMime = pickRecorderMime();
+    log(`出力形式: ${recMime.mime || '(デフォルト)'} → .${recMime.ext}`);
+
+    // フォントを念のため事前ロード (Canvas描画前に確実にフォントを使える状態にする)
+    const capFont = $('capFont').value;
+    const capSize = parseInt($('capSize').value);
+    const capWeight = $('capWeight').value;
+    const fontFamilyForCanvas = capFont; // 'Noto Sans JP', sans-serif など
+    try {
+      if (document.fonts && document.fonts.load) {
+        log('フォントを読み込み中...');
+        await document.fonts.load(`${capWeight} ${capSize}px ${capFont}`);
+      }
+    } catch (e) {
+      log('フォント読み込みスキップ: ' + e.message);
+    }
+
+    // 動画読み込み
+    log('動画を準備中...');
+    const videoEl = await makeVideoElement(state.videoFile);
+    const videoW = videoEl.videoWidth;
+    const videoH = videoEl.videoHeight;
+    log(`動画サイズ: ${videoW}x${videoH}, 元の長さ: ${videoEl.duration.toFixed(2)}秒`);
+
+    // トリミング
+    const trimStart = Math.max(0, state.trimStart || 0);
+    const trimEnd = (state.trimEnd && state.trimEnd > trimStart)
+      ? Math.min(videoEl.duration, state.trimEnd)
+      : videoEl.duration;
+    const outDur = trimEnd - trimStart;
+    log(`出力範囲: ${trimStart.toFixed(2)}〜${trimEnd.toFixed(2)}秒 (${outDur.toFixed(2)}秒)`);
+
+    // 音声デコード
+    log('音声を準備中...');
+    const audioBuf = await decodeAudio(state.audioBlob);
+    log(`音声長: ${audioBuf.duration.toFixed(2)}秒`);
+
+    // Canvasセットアップ (1080x1920)
+    const W = 1080, H = 1920;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    // クロップ計算
+    const crop = computeCropDraw(videoW, videoH, W, H);
+
+    // テロップスタイル
+    const strokeMode = $('capStrokeOn').value;
+    const strokePresetW = strokeMode === 'on' ? 6 : strokeMode === 'light' ? 2 : 0;
+    const style = {
+      font: fontFamilyForCanvas,
+      size: capSize * (W / 1080), // 1080px幅基準のサイズ
+      weight: capWeight,
+      color: $('capColor').value,
+      strokeW: strokePresetW,
+      bottom: parseInt($('capBottom').value) / 100, // 0-1
+    };
+
+    // 音声を AudioContext で再生 + MediaStreamDestination で取り込む
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const audioDest = audioCtx.createMediaStreamDestination();
+    const audioSrc = audioCtx.createBufferSource();
+    audioSrc.buffer = audioBuf;
+    audioSrc.connect(audioDest);
+    // ※AudioContextの出力はスピーカーに繋がない(無音で録音)
+    // 動画より音声が長ければ録画時間で自然に切れる、短ければ無音で続く
+
+    // Canvas から MediaStream を取得
+    const canvasStream = canvas.captureStream(30); // 30fps
+    // Canvas + 音声を合成
+    const combinedStream = new MediaStream([
+      ...canvasStream.getVideoTracks(),
+      ...audioDest.stream.getAudioTracks(),
+    ]);
+
+    // MediaRecorder セットアップ
+    const recorder = new MediaRecorder(combinedStream, {
+      mimeType: recMime.mime || undefined,
+      videoBitsPerSecond: 5_000_000, // 5 Mbps
+    });
+    const chunks = [];
+    recorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) chunks.push(e.data);
+    };
+    const recordingDone = new Promise((resolve) => {
+      recorder.onstop = () => resolve();
+    });
+
+    // ===== 録画開始 =====
+    log('録画開始... (動画の実時間ぶんかかります)');
+    recorder.start(100); // 100ms ごとにチャンク
+    audioSrc.start();
+    videoEl.currentTime = trimStart;
+    await new Promise(r => { videoEl.onseeked = r; setTimeout(r, 200); });
+    await videoEl.play();
+
+    const startWallTime = performance.now();
+    let lastFrameTime = -1;
+
+    // フレーム描画ループ
+    await new Promise((resolve) => {
+      function tick() {
+        const elapsed = (performance.now() - startWallTime) / 1000; // 経過秒数
+        if (elapsed >= outDur) {
+          resolve();
+          return;
+        }
+        // 動画の現在時刻
+        const vt = videoEl.currentTime;
+        // 動画が範囲末尾を越えそうならいったん停止
+        if (vt >= trimEnd) {
+          videoEl.pause();
+        }
+
+        // Canvasに描画
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+        // 9:16クロップして拡縮
+        try {
+          ctx.drawImage(videoEl, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, W, H);
+        } catch (e) {
+          // drawImage失敗時はスキップ
+        }
+
+        // テロップ (経過秒に該当するもの)
+        const cur = state.captions.find(c => elapsed >= c.start && elapsed <= c.end);
+        if (cur && cur.text) {
+          drawCaption(ctx, W, H, cur.text, style);
+        }
+
+        // 進捗
+        $('exportProgress').style.width = Math.min(100, (elapsed / outDur * 100)) + '%';
+
+        requestAnimationFrame(tick);
+      }
+      tick();
+    });
+
+    // ===== 録画停止 =====
+    log('録画停止、ファイルを書き出し中...');
+    recorder.stop();
+    videoEl.pause();
+    try { audioSrc.stop(); } catch (e) {}
+    try { audioCtx.close(); } catch (e) {}
+
+    await recordingDone;
+
+    const blob = new Blob(chunks, { type: recMime.mime || 'video/webm' });
+    const url = URL.createObjectURL(blob);
+    const link = $('downloadLink');
+    link.href = url;
+    link.download = `short_${Date.now()}.${recMime.ext}`;
+    link.style.display = 'block';
+    $('exportProgress').style.width = '100%';
+    log(`書き出し完了 / サイズ: ${(blob.size/1024/1024).toFixed(2)}MB / 形式: .${recMime.ext}`, 'ok');
+    if (recMime.ext === 'webm') {
+      log('WebM形式で出力されました。Instagram等にそのままアップロード可能です。', 'ok');
+    }
+  } catch (e) {
+    console.error(e);
+    log('エラー: ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'MP4を書き出す';
+  }
+});
+
+
+// Init
+log('準備完了。各ステップを埋めてから「書き出す」を押してください。');
+</script>
+</div>
